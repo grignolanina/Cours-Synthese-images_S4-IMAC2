@@ -305,14 +305,19 @@ int main()
 
     //crea des donnees pour notre triangle
     //coord
-    int n_triangles = 8;
+    int n_triangles = 20;
     float rayon = 0.5;
 
     std::vector<Vertex2DColor> vertices;
 
-    vertices.push_back(Vertex2DColor(glm::vec2(0., 0.), glm::vec3((1., 0., 0.))));
+    glm::vec2 origin_pos = glm::vec2(0. , 0.);
+    glm::vec3 origin_color = glm::vec3( 0.5, 0.5, 0.5);
+    vertices.push_back(Vertex2DColor(origin_pos, origin_color));
+
     for(int i = 0 ; i< n_triangles; i++){
-        vertices.push_back(Vertex2DColor(glm::vec2(rayon*std::cos((i*2*M_PI)/n_triangles), rayon*std::sin((i*2*M_PI)/n_triangles)), glm::vec3((1., 0., 0.))));        
+        glm::vec2 position = glm::vec2(rayon*std::cos((i*2*glm::pi<float>())/n_triangles), rayon*std::sin((i*2*glm::pi<float>())/n_triangles));
+        glm::vec3 color = glm::vec3(0.8 , 0.3 ,0.2);
+        vertices.push_back(Vertex2DColor(position, color));        
     }
     
     // Vertex2DColor vertices[] = {
@@ -325,7 +330,7 @@ int main()
     // };
     
     //envoi des coord
-    glBufferData(GL_ARRAY_BUFFER, 9*sizeof(Vertex2DColor), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (n_triangles+1)*sizeof(Vertex2DColor), vertices.data(), GL_STATIC_DRAW);
 
     //deBind du vbo pour eviter modif par erreur
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -339,12 +344,22 @@ int main()
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
    //      add le tableau d'indice des sommets
-   uint32_t indices[] {
-    0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5, 0, 5, 6, 0, 6, 7, 0, 7, 8, 0, 8, 1
-   };
+//    uint32_t indices[] {
+//     0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5, 0, 5, 6, 0, 6, 7, 0, 7, 8, 0, 8, 1
+//    };
 
+   std::vector<uint32_t> indices;
+   
+   for(int i = 1; i< n_triangles ; i++){
+    indices.push_back(0);
+    indices.push_back(i);
+    indices.push_back(i+1);
+   }
+   indices.push_back(0);
+   indices.push_back(n_triangles);
+   indices.push_back(1);
 
-   glBufferData(GL_ELEMENT_ARRAY_BUFFER, 24* sizeof(uint32_t), indices, GL_STATIC_DRAW);
+   glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3*n_triangles*sizeof(uint32_t), indices.data(), GL_STATIC_DRAW);
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     //specification des donnees pour expliquer a opengl comment gerer les objets en faisant un vao
@@ -363,11 +378,8 @@ int main()
     glEnableVertexAttribArray(VERTEX_ATTR_COLOR);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);    
-    glVertexAttribPointer(VERTEX_ATTR_POSITION, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex2DColor), (const GLvoid*)offsetof(Vertex2DColor, m_position)); //position dans le vbo, la taille d'un attribut (nb coord), type, stride, taille d'asso de chaque coord (ici 2 * taille float), position du premier elem
-    // glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glVertexAttribPointer(VERTEX_ATTR_POSITION, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex2DColor), (const GLvoid*)offsetof(Vertex2DColor, m_position)); 
 
-    
-    // glBindBuffer(GL_ARRAY_BUFFER, vbo);    
     glVertexAttribPointer(VERTEX_ATTR_COLOR, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex2DColor), (const GLvoid*)offsetof(Vertex2DColor, m_color)); //position dans le vbo, la taille d'un attribut (nb coord), type, stride, taille d'asso de chaque coord (ici 5 * taille float), position du premier elem
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -392,7 +404,7 @@ int main()
         glBindVertexArray(vao);
         // glDrawArrays(GL_TRIANGLES,0,3);
         //glDrawArrays(GL_TRIANGLES,0,n_triangles*3); //on dessine des triangles, en partant du 0, ils ont en tout 6 sommets
-        glDrawElements(GL_TRIANGLES, 28, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, n_triangles*3, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
 
@@ -407,8 +419,10 @@ int main()
     /*
      *         EXO1
     */
-    glDeleteBuffers(1, &vbo);
     glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(1, &vbo);
+    glDeleteBuffers(1, &ibo);
+
 
 
     glfwTerminate();
